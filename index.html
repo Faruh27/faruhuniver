@@ -1,6 +1,7 @@
-<!DOCTYPE html><html lang="ru">
+<!DOCTYPE html>
+<html>
 <head>
-  <meta charset="UTF-8">
+   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ahmet Consulting — Регистрация</title>
   <style>
@@ -137,14 +138,16 @@
   <button type="submit">Зарегистрироваться</button>
 </form>
 
-  </div> <script type="module">
-    // 🔥 ВСТАВЬ СЮДА СВОЙ CONFIG
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+  </div>
+  <script type="module">
+    // Firebase SDK
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getStorage, ref, uploadBytes } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
+    // 🔐 ТВОЙ CONFIG — вставлен:
     const firebaseConfig = {
-       apiKey: "AIzaSyDMGZ1XtGWi4Cbo5nhhB2eQkcXTVU3aYk0",
+      apiKey: "AIzaSyDMGZ1XtGWi4Cbo5nhhB2eQkcXTVU3aYk0",
       authDomain: "ahmet-consulting.firebaseapp.com",
       projectId: "ahmet-consulting",
       storageBucket: "ahmet-consulting.appspot.com",
@@ -157,39 +160,44 @@
     const db = getFirestore(app);
     const storage = getStorage(app);
 
-    const form = document.getElementById("registrationForm");
-    const success = document.getElementById("successMessage");
-
-    form.addEventListener("submit", async (e) => {
+    // Загрузка данных формы
+    async function submitForm(e) {
       e.preventDefault();
 
       const name = document.getElementById("name").value;
       const surname = document.getElementById("surname").value;
-      const dob = document.getElementById("dob").value;
-      const photoFile = document.getElementById("photo").files[0];
-      const otherFile = document.getElementById("file").files[0];
+      const birth = document.getElementById("birth").value;
+      const photo = document.getElementById("photo").files[0];
+      const file = document.getElementById("file").files[0];
 
-      const photoRef = ref(storage, `photos/${Date.now()}_${photoFile.name}`);
-      const fileRef = ref(storage, `files/${Date.now()}_${otherFile.name}`);
+      try {
+        // Сохраняем данные в Firestore
+        const docRef = await addDoc(collection(db, "students"), {
+          name,
+          surname,
+          birth,
+          photoName: photo.name,
+          fileName: file.name,
+          timestamp: new Date()
+        });
 
-      const photoSnapshot = await uploadBytes(photoRef, photoFile);
-      const fileSnapshot = await uploadBytes(fileRef, otherFile);
+        // Загружаем файлы в Firebase Storage
+        await uploadBytes(ref(storage, `photos/${docRef.id}_${photo.name}`), photo);
+        await uploadBytes(ref(storage, `files/${docRef.id}_${file.name}`), file);
 
-      const photoURL = await getDownloadURL(photoSnapshot.ref);
-      const fileURL = await getDownloadURL(fileSnapshot.ref);
+        alert("✅ Ученик успешно зарегистрирован!");
+        document.getElementById("form").reset();
+      } catch (err) {
+        alert("❌ Ошибка при сохранении: " + err.message);
+      }
+    }
 
-      await addDoc(collection(db, "students"), {
-        name,
-        surname,
-        dob,
-        photoURL,
-        fileURL,
-        createdAt: new Date().toISOString()
-      });
-
-      success.style.display = "flex";
-      setTimeout(() => success.style.display = "none", 3000);
-      form.reset();
+    window.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("form").addEventListener("submit", submitForm);
     });
-  </script></body>
+  </script>
+</head>
+<body>
+ 
+</body>
 </html>
