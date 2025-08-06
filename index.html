@@ -1,0 +1,195 @@
+<!DOCTYPE html><html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ahmet Consulting — Регистрация</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f7f9fc;
+      color: #333;
+      scroll-behavior: smooth;
+    }
+    header {
+      background: linear-gradient(135deg, #0052D4, #4364F7);
+      color: white;
+      padding: 100px 20px;
+      text-align: center;
+    }
+    header h1 {
+      font-size: 3em;
+      margin: 0 0 20px;
+    }
+    header p {
+      font-size: 1.2em;
+      margin-bottom: 30px;
+    }
+    header button {
+      background: white;
+      color: #0052D4;
+      padding: 12px 24px;
+      font-size: 1em;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    header button:hover {
+      background: #e6e6e6;
+    }
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin: 10px 0 5px;
+    }
+    input, button {
+      width: 100%;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      margin-bottom: 15px;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #0052D4;
+      color: white;
+      font-weight: bold;
+      border: none;
+    }
+    button:hover {
+      background-color: #003f9e;
+    }
+    .success {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #d4edda;
+      color: #155724;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      animation: fadeOut 3s ease-in-out forwards;
+    }
+    .checkmark {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid green;
+      display: inline-block;
+      position: relative;
+      margin-right: 10px;
+    }
+    .checkmark::after {
+      content: '';
+      position: absolute;
+      left: 5px;
+      top: 1px;
+      width: 5px;
+      height: 10px;
+      border: solid green;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+    @keyframes fadeOut {
+      0% { opacity: 1; }
+      80% { opacity: 1; }
+      100% { opacity: 0; display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Ahmet Consulting</h1>
+    <p>Добро пожаловать! Здесь вы можете зарегистрироваться для участия.</p>
+    <button onclick="document.getElementById('form').scrollIntoView({ behavior: 'smooth' })">Перейти к регистрации</button>
+  </header> <div class="container" id="form">
+    <h2>Регистрация</h2>
+    <div id="successMessage" style="display: none;" class="success">
+      <span class="checkmark"></span>
+      Регистрация прошла успешно!
+    </div>
+    <form id="registrationForm">
+      <label for="name">Имя:</label>
+      <input type="text" id="name" required><label for="surname">Фамилия:</label>
+  <input type="text" id="surname" required>
+
+  <label for="dob">Дата рождения:</label>
+  <input type="date" id="dob" required>
+
+  <label for="photo">Фото:</label>
+  <input type="file" id="photo" accept="image/*" required>
+
+  <label for="file">Файл:</label>
+  <input type="file" id="file" required>
+
+  <button type="submit">Зарегистрироваться</button>
+</form>
+
+  </div> <script type="module">
+    // 🔥 ВСТАВЬ СЮДА СВОЙ CONFIG
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+
+    const firebaseConfig = {
+       apiKey: "AIzaSyDMGZ1XtGWi4Cbo5nhhB2eQkcXTVU3aYk0",
+      authDomain: "ahmet-consulting.firebaseapp.com",
+      projectId: "ahmet-consulting",
+      storageBucket: "ahmet-consulting.appspot.com",
+      messagingSenderId: "253579961791",
+      appId: "1:253579961791:web:738c1277d865069a22fdc5",
+      measurementId: "G-KHQYBLGMN5"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+
+    const form = document.getElementById("registrationForm");
+    const success = document.getElementById("successMessage");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const name = document.getElementById("name").value;
+      const surname = document.getElementById("surname").value;
+      const dob = document.getElementById("dob").value;
+      const photoFile = document.getElementById("photo").files[0];
+      const otherFile = document.getElementById("file").files[0];
+
+      const photoRef = ref(storage, `photos/${Date.now()}_${photoFile.name}`);
+      const fileRef = ref(storage, `files/${Date.now()}_${otherFile.name}`);
+
+      const photoSnapshot = await uploadBytes(photoRef, photoFile);
+      const fileSnapshot = await uploadBytes(fileRef, otherFile);
+
+      const photoURL = await getDownloadURL(photoSnapshot.ref);
+      const fileURL = await getDownloadURL(fileSnapshot.ref);
+
+      await addDoc(collection(db, "students"), {
+        name,
+        surname,
+        dob,
+        photoURL,
+        fileURL,
+        createdAt: new Date().toISOString()
+      });
+
+      success.style.display = "flex";
+      setTimeout(() => success.style.display = "none", 3000);
+      form.reset();
+    });
+  </script></body>
+</html>
